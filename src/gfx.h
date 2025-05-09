@@ -7,6 +7,11 @@
 
 #define GFX_DEGREES_TO_RADIANS 3.14159 / 180
 #define GFX_TEXTURE_ARRAY_LENGTH 8
+#define GFX_TILE_W 32
+#define GFX_TILE_HW GFX_TILE_W / 2
+#define GFX_TILE_QW GFX_TILE_W / 4
+#define GFX_WALL_H 48
+#define GFX_WALL_HH GFX_WALL_H / 2
 
 typedef struct camera_t
 {

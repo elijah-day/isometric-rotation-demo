@@ -45,6 +45,11 @@ void initialize_dstrect_array(gfx_t *gfx, world_t *world)
 {
 	for(int i = 0; i < WORLD_TILE_ARRAY_LENGTH; i++)
 	{
+		if(gfx->texture_array[world->tile_array[i].texture_id] == NULL)
+		{
+			continue;
+		}
+	
 		world->tile_array[i].dstrect.x = world->tile_array[i].x;
 		world->tile_array[i].dstrect.y = world->tile_array[i].y;
 		
@@ -54,13 +59,47 @@ void initialize_dstrect_array(gfx_t *gfx, world_t *world)
 		world->tile_array[i].dstrect.h = 
 			gfx->texture_array[world->tile_array[i].texture_id]->h;
 	}
+	
+	for(int i = 0; i < WORLD_WALL_ARRAY_LENGTH; i++)
+	{
+		if(gfx->texture_array[world->wall_array[i].texture_id] == NULL)
+		{
+			continue;
+		}
+	
+		world->wall_array[i].dstrect.x = world->wall_array[i].x;
+		world->wall_array[i].dstrect.y = world->wall_array[i].y;
+		
+		world->wall_array[i].dstrect.w = 
+			gfx->texture_array[world->wall_array[i].texture_id]->w / GFX_TILE_W;
+			
+		world->wall_array[i].dstrect.h = 
+			gfx->texture_array[world->wall_array[i].texture_id]->h;
+	}
+	
+	for(int i = 0; i < WORLD_ENTITY_ARRAY_LENGTH; i++)
+	{
+		if(gfx->texture_array[world->entity_array[i].texture_id] == NULL)
+		{
+			continue;
+		}
+	
+		world->entity_array[i].dstrect.x = world->wall_array[i].x;
+		world->entity_array[i].dstrect.y = world->wall_array[i].y;
+		
+		world->entity_array[i].dstrect.w = 
+			gfx->texture_array[world->entity_array[i].texture_id]->w;
+			
+		world->entity_array[i].dstrect.h = 
+			gfx->texture_array[world->entity_array[i].texture_id]->h;
+	}
 }
 
 void load_texture_array(const char *texture_path_array[], gfx_t *gfx)
 {
 	/* TODO: The texture path array needs to be in a struct or something with a
 	listed length... */
-	int texture_path_array_length = 2;
+	int texture_path_array_length = 5;
 
 	for(int i = 0; i < GFX_TEXTURE_ARRAY_LENGTH; i++)
 	{
@@ -102,15 +141,14 @@ void render_world(gfx_t *gfx, world_t *world)
 		world->tile_array[i].dstrect.x =
 			(world->tile_array[i].x - gfx->camera.x) * rm_cos -
 			(world->tile_array[i].y - gfx->camera.y) * rm_sin +
-			0.25 * gfx->camera.hw - 16;
+			0.25 * gfx->camera.hw - GFX_TILE_HW;
 			
 		/* 16 needed to account for tile width... 0.25 multiplier to account for
-		the render scaling of 2:1... */
-			
+		the render scaling of 2:1. */
 		world->tile_array[i].dstrect.y =
 			(world->tile_array[i].x - gfx->camera.x) * rm_sin +
 			(world->tile_array[i].y - gfx->camera.y) * rm_cos +
-			0.5 * gfx->camera.hh - 16;
+			0.5 * gfx->camera.hh - GFX_TILE_HW;
 	
 		SDL_RenderTextureRotated
 		(
@@ -121,6 +159,90 @@ void render_world(gfx_t *gfx, world_t *world)
 			gfx->camera.angle,
 			NULL,
 			SDL_FLIP_NONE
+		);
+	}
+	
+	SDL_SetRenderScale(gfx->renderer, 4, 4);
+	
+	for(int i = 0; i < WORLD_WALL_ARRAY_LENGTH; i++)
+	{
+		SDL_FRect srcrect = {0, 0, 1, GFX_WALL_H};
+		
+		/* Render "slivers" of wall so that we can do it at an angle. */
+		for(int j = 0; j < GFX_TILE_W; j++)
+		{		
+			world->wall_array[i].dstrect.x =
+				(world->wall_array[i].x - gfx->camera.x) * rm_cos -
+				(world->wall_array[i].y - gfx->camera.y) * rm_sin +
+				0.25 * gfx->camera.hw - GFX_TILE_HW -
+				
+				/* Subtract this line to account for different distances taken
+				by rotating objects of different sizes. */
+				world->wall_array[i].y * rm_sin +
+				
+				/* Render slivers of wall with horizontal offset. */
+				j * rm_cos +
+				
+				/* Offset to center wall for rotation. */
+				GFX_TILE_HW;
+
+			world->wall_array[i].dstrect.y =
+				/* Multiply gfx->camera by 2 to account for tiles being half the
+				height of everything else and needing to compensate in
+				distance. */
+				(world->wall_array[i].x - 0.5 * gfx->camera.x) * rm_sin +
+				(world->wall_array[i].y - 0.5 * gfx->camera.y) * rm_cos +
+				0.25 * gfx->camera.hh - GFX_WALL_HH -
+				
+				/* Subtract this line to account for different distances taken
+				by rotating objects of different sizes. */
+				0.5 * world->wall_array[i].x * rm_sin +
+				
+				/* Render slivers of wall with vertical offset.  It is
+				multiplied by 0.5 to account for tile height being half of the
+				wall height. */
+				0.5 * j * rm_sin -
+				
+				/* Offset to center wall for rotation. */
+				GFX_WALL_HH;
+				
+			SDL_RenderTexture
+			(
+				gfx->renderer,
+				gfx->texture_array[world->wall_array[i].texture_id],
+				&srcrect,
+				&world->wall_array[i].dstrect
+			);
+			
+			/* This needs to be incremented to move to the next "sliver" of wall
+			to be rendered. */
+			srcrect.x += 1;
+		}
+	}
+	
+	for(int i = 0; i < WORLD_ENTITY_ARRAY_LENGTH; i++)
+	{
+		world->entity_array[i].dstrect.x =
+			(world->entity_array[i].x - gfx->camera.x) * rm_cos -
+			(world->entity_array[i].y - gfx->camera.y) * rm_sin +
+			0.25 * gfx->camera.hw - GFX_TILE_HW -
+			world->entity_array[i].y * rm_sin;
+	
+		world->entity_array[i].dstrect.y =
+			/* Multiply gfx->camera by 2 to account for tiles being half the
+			height of everything else and needing to compensate in
+			distance. */
+			(world->entity_array[i].x - 0.5 * gfx->camera.x) * rm_sin +
+			(world->entity_array[i].y - 0.5 * gfx->camera.y) * rm_cos +
+			0.25 * gfx->camera.hh - GFX_TILE_W -
+			0.5 * world->entity_array[i].x * rm_sin;
+			
+		SDL_RenderTexture
+		(
+			gfx->renderer,
+			gfx->texture_array[world->entity_array[i].texture_id],
+			NULL,
+			&world->entity_array[i].dstrect
 		);
 	}
 	
