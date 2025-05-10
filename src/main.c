@@ -34,7 +34,13 @@ int main(/* int argc, char *argv[] */)
 	world_t world =
 	{
 		{
+			{{0, 0, 0, 0}, 36, 18, 4},
 			{{0, 0, 0, 0}, 32, 16, 4},
+			{{0, 0, 0, 0}, 8, 16, 4}
+		},
+		{
+			{{0, 0, 0, 0}, 0, 0, 0},
+			{{0, 0, 0, 0}, 0, 0, 0},
 		},
 		{
 			{{0, 0, 0, 0}, 0, 0, 1}, 
@@ -67,6 +73,10 @@ int main(/* int argc, char *argv[] */)
 	update_camera_dimensions(&gfx);
 	load_texture_array(texture_path_array, &gfx);
 	initialize_dstrect_array(&gfx, &world);
+	
+	/* This is needed to initialize the z buffer for the first time before any
+	camera rotation is activated. */
+	sort_entity_z_buffer(&gfx, &world);
 	
 	while(input.program_running)
 	{
@@ -103,10 +113,12 @@ int main(/* int argc, char *argv[] */)
 		if(input.keys_pressed[SDL_SCANCODE_LEFT])
 		{
 			gfx.camera.angle -= 1;
+			sort_entity_z_buffer(&gfx, &world);
 		}
 		if(input.keys_pressed[SDL_SCANCODE_RIGHT])
 		{
 			gfx.camera.angle += 1;
+			sort_entity_z_buffer(&gfx, &world);
 		}
 		
 		SDL_Delay(4);

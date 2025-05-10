@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 bool initialize_gfx(gfx_t *gfx)
 {
@@ -222,27 +223,29 @@ void render_world(gfx_t *gfx, world_t *world)
 	
 	for(int i = 0; i < WORLD_ENTITY_ARRAY_LENGTH; i++)
 	{
-		world->entity_array[i].dstrect.x =
-			(world->entity_array[i].x - gfx->camera.x) * rm_cos -
-			(world->entity_array[i].y - gfx->camera.y) * rm_sin +
-			0.25 * gfx->camera.hw - GFX_TILE_HW -
-			world->entity_array[i].y * rm_sin;
+		printf("%f\n", world->entity_z_buffer[i].x + world->entity_z_buffer[i].y);
 	
-		world->entity_array[i].dstrect.y =
+		world->entity_z_buffer[i].dstrect.x =
+			(world->entity_z_buffer[i].x - gfx->camera.x) * rm_cos -
+			(world->entity_z_buffer[i].y - gfx->camera.y) * rm_sin +
+			0.25 * gfx->camera.hw - GFX_TILE_HW -
+			world->entity_z_buffer[i].y * rm_sin;
+	
+		world->entity_z_buffer[i].dstrect.y =
 			/* Multiply gfx->camera by 2 to account for tiles being half the
 			height of everything else and needing to compensate in
 			distance. */
-			(world->entity_array[i].x - 0.5 * gfx->camera.x) * rm_sin +
-			(world->entity_array[i].y - 0.5 * gfx->camera.y) * rm_cos +
+			(world->entity_z_buffer[i].x - 0.5 * gfx->camera.x) * rm_sin +
+			(world->entity_z_buffer[i].y - 0.5 * gfx->camera.y) * rm_cos +
 			0.25 * gfx->camera.hh - GFX_TILE_W -
-			0.5 * world->entity_array[i].x * rm_sin;
+			0.5 * world->entity_z_buffer[i].x * rm_sin;
 			
 		SDL_RenderTexture
 		(
 			gfx->renderer,
-			gfx->texture_array[world->entity_array[i].texture_id],
+			gfx->texture_array[world->entity_z_buffer[i].texture_id],
 			NULL,
-			&world->entity_array[i].dstrect
+			&world->entity_z_buffer[i].dstrect
 		);
 	}
 	
@@ -275,4 +278,49 @@ void update_camera_dimensions(gfx_t *gfx)
 	
 	gfx->camera.hw = gfx->camera.w / 2;
 	gfx->camera.hh = gfx->camera.h / 2;
+}
+
+typedef struct key_pair_t
+{
+	float entity_distance;
+	int index;
+}
+key_pair_t;
+
+static int compare_ascending_order(const void *a, const void *b)
+{
+	return
+		((key_pair_t *)a)->entity_distance -
+		((key_pair_t *)b)->entity_distance;
+}
+
+void sort_entity_z_buffer(gfx_t *gfx, world_t *world)
+{		
+	float rm_cos = cos(GFX_DEGREES_TO_RADIANS * gfx->camera.angle);
+	float rm_sin = sin(GFX_DEGREES_TO_RADIANS * gfx->camera.angle);
+
+	key_pair_t key_pair_array[WORLD_ENTITY_ARRAY_LENGTH];
+
+	for(int i = 0; i < WORLD_ENTITY_ARRAY_LENGTH; i++)
+	{
+		key_pair_array[i].index = i;
+	
+		key_pair_array[i].entity_distance =
+			world->entity_array[i].x * rm_sin +
+			world->entity_array[i].y * rm_cos;
+	}
+	
+	qsort
+	(
+		key_pair_array,
+		WORLD_ENTITY_ARRAY_LENGTH,
+		sizeof(key_pair_t),
+		compare_ascending_order
+	);
+		
+	for(int i = 0; i < WORLD_ENTITY_ARRAY_LENGTH; i++)
+	{
+		world->entity_z_buffer[i] =
+			world->entity_array[key_pair_array[i].index];
+	}
 }
