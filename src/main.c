@@ -19,7 +19,8 @@ const char *texture_path_array[] =
 	"data/tile2.png",
 	"data/wall1.png",
 	"data/wall2.png",
-	"data/red_barrel.png"
+	"data/red_barrel.png",
+	"data/g013m.png"
 };
 
 int main(/* int argc, char *argv[] */)
@@ -34,13 +35,12 @@ int main(/* int argc, char *argv[] */)
 	world_t world =
 	{
 		{
-			{{0, 0, 0, 0}, 36, 18, 4},
-			{{0, 0, 0, 0}, 32, 16, 4},
-			{{0, 0, 0, 0}, 8, 16, 4}
+			{{0, 0, 0, 0}, {0, 0, 0, 0}, 0, 36, 18, 4},
+			{{0, 0, 0, 0}, {0, 0, 0, 0}, 0, 32, 16, 4},
+			{{0, 0, 0, 0}, {0, 0, 0, 0}, 0, 8, 16, 5},
 		},
 		{
-			{{0, 0, 0, 0}, 0, 0, 0},
-			{{0, 0, 0, 0}, 0, 0, 0},
+			{{0, 0, 0, 0}, {0, 0, 0, 0}, 0, 0, 0, 0},
 		},
 		{
 			{{0, 0, 0, 0}, 0, 0, 1}, 
@@ -72,7 +72,7 @@ int main(/* int argc, char *argv[] */)
 	initialize_gfx(&gfx);
 	update_camera_dimensions(&gfx);
 	load_texture_array(texture_path_array, &gfx);
-	initialize_dstrect_array(&gfx, &world);
+	initialize_rect_array(&gfx, &world);
 	
 	/* This is needed to initialize the z buffer for the first time before any
 	camera rotation is activated. */
@@ -114,11 +114,22 @@ int main(/* int argc, char *argv[] */)
 		{
 			gfx.camera.angle -= 1;
 			sort_entity_z_buffer(&gfx, &world);
+			update_z_buffer_texture_directions(&gfx, &world);
 		}
 		if(input.keys_pressed[SDL_SCANCODE_RIGHT])
 		{
 			gfx.camera.angle += 1;
 			sort_entity_z_buffer(&gfx, &world);
+			update_z_buffer_texture_directions(&gfx, &world);
+		}
+		
+		if(gfx.camera.angle > 359)
+		{
+			gfx.camera.angle = 0;
+		}
+		if(gfx.camera.angle < 0)
+		{
+			gfx.camera.angle = 359;
 		}
 		
 		SDL_Delay(4);

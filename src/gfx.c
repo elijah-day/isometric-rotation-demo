@@ -42,7 +42,7 @@ bool initialize_gfx(gfx_t *gfx)
 	return true;
 }
 
-void initialize_dstrect_array(gfx_t *gfx, world_t *world)
+void initialize_rect_array(gfx_t *gfx, world_t *world)
 {
 	for(int i = 0; i < WORLD_TILE_ARRAY_LENGTH; i++)
 	{
@@ -89,9 +89,18 @@ void initialize_dstrect_array(gfx_t *gfx, world_t *world)
 		world->entity_array[i].dstrect.y = world->wall_array[i].y;
 		
 		world->entity_array[i].dstrect.w = 
-			gfx->texture_array[world->entity_array[i].texture_id]->w;
+			gfx->texture_array[world->entity_array[i].texture_id]->w / 8;
 			
 		world->entity_array[i].dstrect.h = 
+			gfx->texture_array[world->entity_array[i].texture_id]->h;
+			
+		world->entity_array[i].srcrect.x = 0;
+		world->entity_array[i].srcrect.y = 0;
+		
+		world->entity_array[i].srcrect.w = 
+			gfx->texture_array[world->entity_array[i].texture_id]->w / 8;
+			
+		world->entity_array[i].srcrect.h = 
 			gfx->texture_array[world->entity_array[i].texture_id]->h;
 	}
 }
@@ -100,7 +109,7 @@ void load_texture_array(const char *texture_path_array[], gfx_t *gfx)
 {
 	/* TODO: The texture path array needs to be in a struct or something with a
 	listed length... */
-	int texture_path_array_length = 5;
+	int texture_path_array_length = 6;
 
 	for(int i = 0; i < GFX_TEXTURE_ARRAY_LENGTH; i++)
 	{
@@ -223,8 +232,6 @@ void render_world(gfx_t *gfx, world_t *world)
 	
 	for(int i = 0; i < WORLD_ENTITY_ARRAY_LENGTH; i++)
 	{
-		printf("%f\n", world->entity_z_buffer[i].x + world->entity_z_buffer[i].y);
-	
 		world->entity_z_buffer[i].dstrect.x =
 			(world->entity_z_buffer[i].x - gfx->camera.x) * rm_cos -
 			(world->entity_z_buffer[i].y - gfx->camera.y) * rm_sin +
@@ -244,7 +251,7 @@ void render_world(gfx_t *gfx, world_t *world)
 		(
 			gfx->renderer,
 			gfx->texture_array[world->entity_z_buffer[i].texture_id],
-			NULL,
+			&world->entity_z_buffer[i].srcrect,
 			&world->entity_z_buffer[i].dstrect
 		);
 	}
@@ -322,5 +329,65 @@ void sort_entity_z_buffer(gfx_t *gfx, world_t *world)
 	{
 		world->entity_z_buffer[i] =
 			world->entity_array[key_pair_array[i].index];
+	}
+}
+
+/* NOTE: This should be called AFTER the z-buffer has been sorted. */
+void update_z_buffer_texture_directions(gfx_t *gfx, world_t *world)
+{
+	for(int i = 0; i < WORLD_ENTITY_ARRAY_LENGTH; i++)
+	{
+		float angle = gfx->camera.angle;
+	
+		if(angle < 180)
+		{
+			if(angle < 90)
+			{
+				if(angle < 45)
+				{
+					world->entity_z_buffer[i].srcrect.x = 0;
+				}
+				else
+				{
+					world->entity_z_buffer[i].srcrect.x = 32;
+				}
+			}
+			else
+			{
+				if(angle < 135)
+				{
+					world->entity_z_buffer[i].srcrect.x = 64;
+				}
+				else
+				{
+					world->entity_z_buffer[i].srcrect.x = 96;
+				}
+			}
+		}
+		else
+		{
+			if(angle < 270)
+			{
+				if(angle < 225)
+				{
+					world->entity_z_buffer[i].srcrect.x = 128;
+				}
+				else
+				{
+					world->entity_z_buffer[i].srcrect.x = 160;
+				}
+			}
+			else
+			{
+				if(angle < 315)
+				{
+					world->entity_z_buffer[i].srcrect.x = 192;
+				}
+				else
+				{
+					world->entity_z_buffer[i].srcrect.x = 224;
+				}
+			}
+		}
 	}
 }

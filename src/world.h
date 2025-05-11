@@ -10,6 +10,8 @@
 typedef struct entity_t
 {
 	SDL_FRect dstrect;
+	SDL_FRect srcrect;
+	float angle;
 	float x;
 	float y;
 	int texture_id;

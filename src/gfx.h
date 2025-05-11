@@ -45,12 +45,13 @@ typedef struct gfx_t
 gfx_t;
 
 bool initialize_gfx(gfx_t *gfx);
-void initialize_dstrect_array(gfx_t *gfx, world_t *world);
+void initialize_rect_array(gfx_t *gfx, world_t *world);
 void load_texture_array(const char *texture_path_array[], gfx_t *gfx);
 void render_world(gfx_t *gfx, world_t *world);
 void sort_entity_z_buffer(gfx_t *gfx, world_t *world);
 void terminate_gfx(gfx_t *gfx);
 void unload_texture_array(gfx_t *gfx);
 void update_camera_dimensions(gfx_t *gfx);
+void update_z_buffer_texture_directions(gfx_t *gfx, world_t *world);
 
 #endif /* GFX_H */
