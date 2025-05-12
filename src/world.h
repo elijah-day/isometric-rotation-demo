@@ -4,7 +4,7 @@
 #include <SDL3/SDL.h>
 
 #define WORLD_TILE_ARRAY_LENGTH 16
-#define WORLD_WALL_ARRAY_LENGTH 4
+#define WORLD_WALL_ARRAY_LENGTH 3
 #define WORLD_ENTITY_ARRAY_LENGTH 3
 
 typedef struct entity_t
@@ -32,6 +32,7 @@ tile_t;
 typedef struct wall_t
 {
 	SDL_FRect dstrect;
+	float length;
 	float x;
 	float y;
 	int texture_id;

@@ -179,7 +179,7 @@ void render_world(gfx_t *gfx, world_t *world)
 		SDL_FRect srcrect = {0, 0, 1, GFX_WALL_H};
 		
 		/* Render "slivers" of wall so that we can do it at an angle. */
-		for(int j = 0; j < GFX_TILE_W; j++)
+		for(int j = 0; j < world->wall_array[i].length; j++)
 		{		
 			world->wall_array[i].dstrect.x =
 				(world->wall_array[i].x - gfx->camera.x) * rm_cos -
@@ -227,6 +227,11 @@ void render_world(gfx_t *gfx, world_t *world)
 			/* This needs to be incremented to move to the next "sliver" of wall
 			to be rendered. */
 			srcrect.x += 1;
+			
+			if(srcrect.x > GFX_TILE_W)
+			{
+				srcrect.x = 0;
+			}
 		}
 	}
 	
